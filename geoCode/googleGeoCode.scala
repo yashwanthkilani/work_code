@@ -1,35 +1,23 @@
-import java.net.URL
 import java.net.URLEncoder
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import com.github.music.of.the.ainur.almaren.Almaren
 import com.github.music.of.the.ainur.almaren.builder.Core.Implicit
 import com.github.music.of.the.ainur.almaren.http.HTTPConn.HTTPImplicit
 import com.github.music.of.the.ainur.almaren.jdbc.JDBC.JDBCImplicit
-import java.util.concurrent.TimeUnit
-import java.nio.file.{Files, Paths}
 
-import org.apache.spark.sql.functions.unix_timestamp
-import org.apache.spark.sql.functions.to_timestamp
-
-import com.github.music.of.the.ainur.quenya.QuenyaDSL
-import com.github.music.of.the.ainur.almaren.Util
-
-import scala.collection.JavaConverters._
 import org.apache.spark.sql.{DataFrame, Dataset, SaveMode}
-import org.apache.spark.sql.types.StructType
-import org.apache.log4j.{Level, LogManager, Logger}
+// Spark 3.3+ uses log4j 2 (log4j 1 `Logger.setLevel` is gone), so use the log4j2 API
+import org.apache.logging.log4j.{Level, LogManager}
+import org.apache.logging.log4j.core.config.Configurator
 
 import scala.io.Source
 import com.github.music.of.the.ainur.almaren.http.Response
-import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.functions._
 import spark.implicits._
 
 import scala.util.Try
 import scala.util.{Failure, Success}
-import org.apache.spark.sql.types.{ArrayType, StringType, StructType}
 import com.modak.common.credential.Credential
 import com.modak.common.ldap
 import com.modak.common.CredentialPayload
@@ -37,10 +25,10 @@ import com.modak.common.CredentialPayload
 import com.ibm.icu.util.TimeZone
 import java.time.{ZoneId, ZonedDateTime}
 
-Logger.getLogger("com.github.music.of.the.ainur.almaren").setLevel(Level.INFO)
+Configurator.setLevel("com.github.music.of.the.ainur.almaren", Level.INFO)
 val almaren = Almaren("googleGeoCode").builder
+Configurator.setLevel("com.googleGeoCode", Level.INFO)
 val logger = LogManager.getLogger("com.googleGeoCode")
-logger.setLevel(Level.INFO)
 
 case class urlBucket(`__ID__`: String, `__URL__`: String)
 
@@ -195,7 +183,7 @@ object googleGeoCode{
       case false =>
         almaren
 	  .sourceDataFrame(df)
-	  .sqlExpr(s"max(updt_ts) as checkpoint")
+	  .sqlExpr(s"cast(max(updt_ts) as string) as checkpoint")
 	  .batch.as[Option[String]]
     }
   }
@@ -470,7 +458,6 @@ object googleGeoCode{
            (googleZoneId, s"(UTC$offset) $microsoftZoneName")
         }
     }).toMap
-    val broadcastTimeZoneMap = spark.sparkContext.broadcast(timeZoneMap)
     df.withColumn("G_FORMATTED_TIMEZONE",expr(s"CASE ${timeZoneMap.map { case (k, v) =>
       if (k == null || v == null) "WHEN G_TIMEZONEID IS NULL THEN NULL"
       else s"WHEN G_TIMEZONEID = '$k' THEN '$v'"
