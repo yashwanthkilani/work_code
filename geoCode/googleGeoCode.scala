@@ -239,11 +239,11 @@ object googleGeoCode{
   
   def getGeoCodeAddressComponentData(result_df: Dataset[Response]): DataFrame = {
     logger.info("[+] Getting Address Components Data For an Object ")
-    val deserialized_result_df = almaren.sourceDataFrame(result_df).sql("select __ID__,__BODY__ from __TABLE__").deserializer("JSON", "__BODY__", None).batch
+    val deserialized_result_df = almaren.sourceDataFrame(result_df).alias("__TABLE__").sql("select __ID__,__BODY__ from __TABLE__").deserializer("JSON", "__BODY__", None).batch
     val explode_results_df = deserialized_result_df.select($"__ID__",explode($"results").as("tmp")).select("__ID__","tmp.*").dropDuplicates("__ID__")
     val explode_address_components_df = explode_results_df.select($"__ID__",explode($"address_components").as("tmp")).select("__ID__","tmp.*")
     val types_new_df = explode_address_components_df.withColumn("types_new",concat_ws(",",col("types"))).withColumn("new",to_json(struct($"long_name", $"short_name", $"types"))).drop("long_name","short_name","types")
-    val address_components_df = almaren.sourceDataFrame(types_new_df).sql("select __ID__,max(case when types_new ='postal_code' then new end) AS g_address_components_postal_code, max(case when types_new ='locality,political' then new end) AS g_address_components_locality,  max(case when types_new ='country,political' then new end) AS g_address_components_country,  max(case when types_new ='administrative_area_level_1,political' then new end) AS g_address_components_administrative_area_level_1 from __TABLE__ group by __ID__").batch
+    val address_components_df = almaren.sourceDataFrame(types_new_df).alias("__TABLE__").sql("select __ID__,max(case when types_new ='postal_code' then new end) AS g_address_components_postal_code, max(case when types_new ='locality,political' then new end) AS g_address_components_locality,  max(case when types_new ='country,political' then new end) AS g_address_components_country,  max(case when types_new ='administrative_area_level_1,political' then new end) AS g_address_components_administrative_area_level_1 from __TABLE__ group by __ID__").batch
     address_components_df
   }
   
@@ -263,6 +263,7 @@ object googleGeoCode{
     df.show(false)
     almaren
       .sourceDataFrame(df)
+      .alias("__TABLE__")
       .sql(s"""select '$jobId' as JOB_ID,__BODY__ as ERROR_MESSAGE,'$processName' as STAGE_NAME,__URL__ as PARAMETERS,concat(STUDY_NUM,",",SITE_NUM) as UNIQUE_KEY_DATA from __TABLE__""")
       .targetJdbc(oracleURL, jdbcDriver, "T_NABU_ERROR_AUDIT", SaveMode.Append, Some(username), Some(password), Map("batchsize" -> "5000"))
       .batch
@@ -326,11 +327,11 @@ object googleGeoCode{
 			     .sqlExpr("STUDY_NUM","SITE_NUM","CNTRY_NM","ZIP_PSTL_CD","CITY","STATE_PROVINCE","ADDRESS_FULL")
 			     .cache()
 			     .batch
-    val id_df = almaren.sourceDataFrame(geoCodeSource_df).sql(s"select monotonically_increasing_id() as __ID__, * from __TABLE__").cache().batch
+    val id_df = almaren.sourceDataFrame(geoCodeSource_df).alias("__TABLE__").sql(s"select monotonically_increasing_id() as __ID__, * from __TABLE__").cache().batch
     val null_remove_df = id_df.na.fill("null")
     val paramDF = null_remove_df.select("__ID__","STUDY_NUM","SITE_NUM")
     logger.info("[+] Inserting FINAL_ADDRESS Column")
-    val final_address_df = almaren.sourceDataFrame(null_remove_df).sql("select *,ADDRESS_FULL||','||CITY||','||STATE_PROVINCE||','||ZIP_PSTL_CD||','||CNTRY_NM as final_address from __TABLE__").batch
+    val final_address_df = almaren.sourceDataFrame(null_remove_df).alias("__TABLE__").sql("select *,ADDRESS_FULL||','||CITY||','||STATE_PROVINCE||','||ZIP_PSTL_CD||','||CNTRY_NM as final_address from __TABLE__").batch
     val geoCodeAllPages = geoCodeUrlGenerator(final_address_df.where("final_address is not null"))
     val geoCodeData =getAllData(geoCodeAllPages.toDS)
     val successGeoCodeData = geoCodeData.where("""get_json_object(__BODY__,'$.status') = "OK"  and __STATUS_CODE__ == 200""")
@@ -357,8 +358,8 @@ object googleGeoCode{
 
   def timeZoneData(df: DataFrame):DataFrame={
     logger.info(s"[+] Getting TimeZone Data")
-    val tz_id_df = almaren.sourceDataFrame(df).sql(s"select monotonically_increasing_id() as __ID__, * from __TABLE__").cache().batch
-    val location_df = almaren.sourceDataFrame(tz_id_df).sql("select *,G_GEOMETRY_LOCATION_LAT||','||G_GEOMETRY_LOCATION_LNG as LOCATION from __TABLE__").batch
+    val tz_id_df = almaren.sourceDataFrame(df).alias("__TABLE__").sql(s"select monotonically_increasing_id() as __ID__, * from __TABLE__").cache().batch
+    val location_df = almaren.sourceDataFrame(tz_id_df).alias("__TABLE__").sql("select *,G_GEOMETRY_LOCATION_LAT||','||G_GEOMETRY_LOCATION_LNG as LOCATION from __TABLE__").batch
     val paramDF = location_df.select("__ID__","STUDY_NUM","SITE_NUM")
     val timezone_df = location_df.select("__ID__","LOCATION").where("LOCATION is not null")
     logger.info("[+] Generating all the TimeZone URLS")
