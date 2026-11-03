@@ -1,0 +1,21 @@
+spark-shell --master yarn \
+--packages "com.github.music-of-the-ainur:almaren-framework_2.11:0.9.0-2.4,com.github.music-of-the-ainur:http-almaren_2.11:1.1.0-2.4,com.typesafe:config:1.4.0,com.github.music-of-the-ainur:jdbc-almaren_2.11:0.0.4-2.4,com.oracle.database.jdbc:ojdbc6:11.2.0.4" \
+--conf spark.dynamicAllocation.enabled=false \
+--conf spark.ui.enabled=false \
+--conf spark.driver.geoCodeUrl="" \
+--conf spark.driver.timezoneUrl="" \
+--conf spark.driver.oracleURL="" \
+--conf spark.driver.extraClassPath=ojdbc6.jar:code/geoCode/files/T_EDC_RPT_GOOGLE_TZ_INFO \
+--conf spark.driver.schema="" \
+--conf spark.driver.batchMode=true \
+--conf spark.driver.applicationStatusAPIUrl="" \
+--conf spark.driver.oracle_cred="" \
+--conf spark.driver.access_key_cred="" \
+--conf spark.driver.workload_cred="" \
+--driver-memory 5G \
+--executor-cores 2 \
+--num-executors 5 \
+--executor-memory 5G \
+--jars libs/ojdbc6.jar,libs/nabu-sparkbot-lib-common-assembly-0.8.2-SNAPSHOT.jar \
+--driver-java-options '-Dlog4j.configurationFile=log4j.properties' \
+--files libs/log4j.properties \
