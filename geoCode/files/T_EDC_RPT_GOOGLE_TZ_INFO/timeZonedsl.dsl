@@ -1,0 +1,5 @@
+__ID__$__ID__:StringType
+dstOffset$g_dstoffset:LongType
+rawOffset$g_rawoffset:LongType
+timeZoneId$g_timezoneid:StringType
+timeZoneName$g_timezonename:StringType

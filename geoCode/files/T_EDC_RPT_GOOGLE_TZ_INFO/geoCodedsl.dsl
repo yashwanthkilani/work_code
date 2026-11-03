@@ -1,0 +1,16 @@
+__ID__$__ID__:StringType
+results@results
+        results.formatted_address$g_formatted_address:StringType
+        results.geometry.bounds.northeast.lat$g_geometry_bounds_northeast_lat:DoubleType
+        results.geometry.bounds.northeast.lng$g_geometry_bounds_northeast_lng:DoubleType
+        results.geometry.bounds.southwest.lat$g_geometry_bounds_southwest_lat:DoubleType
+        results.geometry.bounds.southwest.lng$g_geometry_bounds_southwest_lng:DoubleType
+        results.geometry.location.lat$g_geometry_location_lat:DoubleType
+        results.geometry.location.lng$g_geometry_location_lng:DoubleType
+        results.geometry.location_type$g_geometry_location_type:StringType
+        results.geometry.viewport.northeast.lat$g_geometry_viewport_northeast_lat:DoubleType
+        results.geometry.viewport.northeast.lng$g_geometry_viewport_northeast_lng:DoubleType
+        results.geometry.viewport.southwest.lat$g_geometry_viewport_southwest_lat:DoubleType
+        results.geometry.viewport.southwest.lng$g_geometry_viewport_southwest_lng:DoubleType
+        results.place_id$g_place_id:StringType
+        results.types$g_types:StringType

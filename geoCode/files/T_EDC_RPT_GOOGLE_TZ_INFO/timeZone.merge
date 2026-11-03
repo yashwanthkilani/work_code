@@ -1,0 +1,29 @@
+merge INTO T_EDC_RPT_GOOGLE_TZ_INFO t1 USING (
+  SELECT
+    g_timezoneid,
+    g_timezonename,
+    g_dstoffset,
+    g_rawoffset,
+    study_num,
+    site_num,
+    g_formatted_timezone,
+    systimestamp AS NABU_UPDT_TS
+  FROM
+    T_EDC_RPT_GOOGLE_TZ_INFO_STG
+) t2 ON (
+  t1.study_num = t2.study_num
+  AND t1.site_num = t2.site_num
+) WHEN matched THEN
+UPDATE
+SET
+  t1.g_timezoneid = t2.g_timezoneid,
+  t1.g_timezonename = t2.g_timezonename,
+  t1.g_dstoffset = t2.g_dstoffset,
+  t1.g_rawoffset = t2.g_rawoffset,
+  t1.nabu_updt_ts = t2.nabu_updt_ts,
+  t1.g_formatted_timezone=t2.g_formatted_timezone
+WHERE
+  NOT (
+    t2."STUDY_NUM" IS NULL
+    AND t2."SITE_NUM" IS NULL
+  )
